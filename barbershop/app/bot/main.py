@@ -4,6 +4,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from app.config import settings
 from app.bot.handlers.start import router as start_router
+from app.bot.handlers.admin import router as admin_router
+from app.bot.handlers.profile import router as profile_router
 from app.logger import logger
 
 async def main():
@@ -11,6 +13,8 @@ async def main():
     bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
     dp.include_router(start_router)
+    dp.include_router(admin_router)
+    dp.include_router(profile_router)
     logger.info("Bot ready")
     await dp.start_polling(bot, drop_pending_updates=True)
 
