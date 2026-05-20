@@ -37,11 +37,36 @@ async def my_bookings(callback: CallbackQuery):
     if not bookings:
         await callback.message.answer("📋 У вас пока нет записей.")
     else:
+        builder = InlineKeyboardBuilder()
+        for b in bookings:
+            if b.status == "confirmed":
+                builder.button(text=f"❌ Отменить #{b.id} ({b.date} {b.time})", callback_data=f"cancel_{b.id}")
+        builder.button(text="◀️ Назад", callback_data="profile")
+        builder.adjust(1)
         msg = "<b>📋 Мои записи</b>\n\n"
         for b in bookings:
-            emoji = "✅" if b.status == "confirmed" else "❌"
+            emoji = "✅" if b.status == "confirmed" else "❌ Отменена"
             msg += f"{emoji} {b.date} в {b.time} (запись #{b.id})\n"
-        await callback.message.answer(msg)
+        await callback.message.edit_text(msg, reply_markup=builder.as_markup())
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("cancel_"))
+async def cancel_booking(callback: CallbackQuery):
+    booking_id = int(callback.data.split("_")[1])
+    async with async_session() as session:
+        booking = await session.get(Booking, booking_id)
+        if not booking:
+            await callback.message.answer("Запись не найдена.")
+            await callback.answer()
+            return
+        if booking.status == "cancelled":
+            await callback.message.answer("Запись уже отменена.")
+            await callback.answer()
+            return
+        booking.status = "cancelled"
+        await session.commit()
+    await callback.message.answer(f"❌ <b>Запись #{booking.id} отменена.</b>\n📅 {booking.date} в {booking.time}")
+    await my_bookings(callback)
     await callback.answer()
 
 @router.callback_query(F.data == "leave_review")
@@ -99,14 +124,11 @@ async def rate_booking(callback: CallbackQuery):
         booking = await session.get(Booking, booking_id)
         review = Review(client_id=booking.client_id, master_id=booking.master_id, booking_id=booking_id, rating=rating, comment=None, is_approved=True)
         session.add(review)
-        # Начисляем бонусы: 5-й визит = +200 бонусов
         client = await session.get(Client, booking.client_id)
         if client and client.total_visits > 0 and client.total_visits % 5 == 0:
             client.bonus_balance = (client.bonus_balance or 0) + 200
             await session.commit()
-            await callback.message.edit_text(
-                f"<b>⭐ Спасибо за оценку!</b>\n\n{'⭐' * rating} за визит {booking.date}.\n🎁 Бонус: +200₽ (каждый 5-й визит)!"
-            )
+            await callback.message.edit_text(f"<b>⭐ Спасибо за оценку!</b>\n\n{'⭐' * rating} за визит {booking.date}.\n🎁 Бонус: +200₽ (каждый 5-й визит)!")
         else:
             await session.commit()
             await callback.message.edit_text(f"<b>⭐ Спасибо за оценку!</b>\n\n{'⭐' * rating} за визит {booking.date}.")
@@ -124,13 +146,7 @@ async def bonuses(callback: CallbackQuery):
         visits = client.total_visits or 0
         bonus = client.bonus_balance or 0
         next_bonus = 5 - (visits % 5) if visits % 5 != 0 else 5
-    msg = (
-        f"<b>🎁 Бонусная система</b>\n\n"
-        f"📋 Всего визитов: <b>{visits}</b>\n"
-        f"💰 Баланс бонусов: <b>{bonus}₽</b>\n"
-        f"🔜 До следующего бонуса: <b>{next_bonus} визитов</b>\n\n"
-        f"<i>Каждый 5-й визит — +200₽ на счёт!</i>"
-    )
+    msg = f"<b>🎁 Бонусная система</b>\n\n📋 Всего визитов: <b>{visits}</b>\n💰 Баланс бонусов: <b>{bonus}₽</b>\n🔜 До следующего бонуса: <b>{next_bonus} визитов</b>\n\n<i>Каждый 5-й визит — +200₽ на счёт!</i>"
     await callback.message.answer(msg)
     await callback.answer()
 
