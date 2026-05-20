@@ -1,15 +1,53 @@
 const tg=window.Telegram.WebApp;tg.expand();tg.ready();tg.setHeaderColor('#0d0d0d');tg.setBackgroundColor('#0d0d0d');
 let svc,mst,date,time,services,masters,isSubmitting=false;
+let currentTab='book';
 
-async function ld(){
-    try{
-        const sr=await fetch('/api/services');services=await sr.json();
-        const s=document.getElementById('svc');
-        services.forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<div class="info"><b>${x.name}</b><span>${x.duration} мин</span></div><strong style="color:#c9a96e">${x.price}₽</strong>`;e.onclick=()=>{document.querySelectorAll('#svc .option').forEach(el=>el.classList.remove('selected'));e.classList.add('selected');svc=x;};s.appendChild(e)});
-        const mr=await fetch('/api/masters');masters=await mr.json();
-        const m=document.getElementById('mst');
-        masters.forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<img src="${x.photo}" onerror="this.style.display='none'"><div class="info"><b>${x.name}</b><span>⭐${x.rating} | Опыт ${x.experience} лет</span></div>`;e.onclick=()=>{document.querySelectorAll('#mst .option').forEach(el=>el.classList.remove('selected'));e.classList.add('selected');mst=x;};m.appendChild(e)});
-    }catch(e){tg.showAlert('Ошибка загрузки данных')}
+// Определяем админа
+const userId = tg.initDataUnsafe?.user?.id;
+const adminIds = [5724746367];
+const isAdmin = adminIds.includes(userId);
+
+// Инициализация
+async function init(){
+    if(isAdmin) document.getElementById('adminNav').style.display='flex';
+    await loadServices();
+    await loadMasters();
+    switchTab('book');
+}
+
+// Переключение вкладок
+function switchTab(tab){
+    currentTab=tab;
+    document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    if(isAdmin){
+        document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+        document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+    }
+    if(tab==='book') ld();
+    if(tab==='profile') document.getElementById('profileContent').innerHTML='';
+    if(tab==='admin') document.getElementById('adminContent').innerHTML='';
+}
+
+if(isAdmin){
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+    });
+}
+
+// === ЗАПИСЬ ===
+async function loadServices(){
+    const sr=await fetch('/api/services');services=await sr.json();
+    const s=document.getElementById('svc');
+    s.innerHTML='';
+    services.forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<div class="info"><b>${x.name}</b><span>${x.duration} мин</span></div><strong style="color:#c9a96e">${x.price}₽</strong>`;e.onclick=()=>{document.querySelectorAll('#svc .option').forEach(el=>el.classList.remove('selected'));e.classList.add('selected');svc=x;};s.appendChild(e)});
+}
+
+async function loadMasters(){
+    const mr=await fetch('/api/masters');masters=await mr.json();
+    const m=document.getElementById('mst');
+    m.innerHTML='';
+    masters.forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<img src="${x.photo}" onerror="this.style.display='none'"><div class="info"><b>${x.name}</b><span>⭐${x.rating} | Опыт ${x.experience} лет</span></div>`;e.onclick=()=>{document.querySelectorAll('#mst .option').forEach(el=>el.classList.remove('selected'));e.classList.add('selected');mst=x;};m.appendChild(e)});
 }
 
 function gd(){const g=document.getElementById('dt');g.innerHTML='';const t=new Date();for(let i=0;i<7;i++){const d=new Date(t);d.setDate(t.getDate()+i);const ds=d.toISOString().split('T')[0];const b=document.createElement('div');b.textContent=d.toLocaleDateString('ru-RU',{day:'numeric',month:'short',weekday:'short'});b.onclick=()=>{document.querySelectorAll('#dt div').forEach(e=>e.classList.remove('selected'));b.classList.add('selected');date=ds;};g.appendChild(b)}}
@@ -38,4 +76,151 @@ async function cf(){
     isSubmitting=false;btn.textContent='Подтвердить';btn.disabled=false;
 }
 
-ld();
+// === ПРОФИЛЬ ===
+async function showMyBookings(){
+    const div=document.getElementById('profileContent');
+    div.innerHTML='Загрузка...';
+    try{
+        const r=await fetch('/api/my-bookings?telegram_id='+userId);
+        const bookings=await r.json();
+        if(!bookings.length){div.innerHTML='<p>У вас пока нет записей.</p>';return}
+        let html='<h3>📋 Мои записи</h3>';
+        bookings.forEach(b=>{
+            html+=`<div class="booking-item"><span>${b.date} в ${b.time}</span>`;
+            if(b.status==='confirmed') html+=`<button class="cancel-btn" onclick="cancelBooking(${b.id})">❌ Отменить</button>`;
+            html+=`</div>`;
+        });
+        div.innerHTML=html;
+    }catch(e){div.innerHTML='<p>Ошибка загрузки</p>'}
+}
+
+async function cancelBooking(id){
+    try{
+        const r=await fetch('/api/cancel-booking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({booking_id:id,telegram_id:userId})});
+        const result=await r.json();
+        if(result.ok){tg.showAlert('Запись отменена');showMyBookings()}else{tg.showAlert(result.detail||'Ошибка')}
+    }catch(e){tg.showAlert('Ошибка соединения')}
+}
+
+async function showLeaveReview(){
+    const div=document.getElementById('profileContent');
+    div.innerHTML='Загрузка...';
+    try{
+        const r=await fetch('/api/my-confirmed-bookings?telegram_id='+userId);
+        const bookings=await r.json();
+        if(!bookings.length){div.innerHTML='<p>Нет завершённых записей для отзыва.</p>';return}
+        let html='<h3>⭐ Выберите запись для отзыва</h3>';
+        bookings.forEach(b=>{
+            html+=`<div class="option" onclick="showStars(${b.id},'${b.date}','${b.time}')"><b>📅 ${b.date} в ${b.time}</b></div>`;
+        });
+        div.innerHTML=html;
+    }catch(e){div.innerHTML='<p>Ошибка загрузки</p>'}
+}
+
+function showStars(bookingId,date,time){
+    const div=document.getElementById('profileContent');
+    let starsHtml='<h3>⭐ Оцените визит</h3><p>'+date+' в '+time+'</p><div class="stars-container">';
+    for(let i=1;i<=5;i++){
+        starsHtml+=`<span class="star" data-rating="${i}" onclick="submitReview(${bookingId},${i})" style="font-size:40px;cursor:pointer;">☆</span>`;
+    }
+    starsHtml+='</div><div id="reviewMsg"></div>';
+    div.innerHTML=starsHtml;
+    document.querySelectorAll('.star').forEach(s=>{
+        s.addEventListener('mouseenter',()=>{const r=parseInt(s.dataset.rating);document.querySelectorAll('.star').forEach((ss,idx)=>{ss.textContent=idx<r?'★':'☆'});});
+        s.addEventListener('mouseleave',()=>{document.querySelectorAll('.star').forEach(ss=>{ss.textContent='☆'});});
+    });
+}
+
+async function submitReview(bookingId,rating){
+    try{
+        const r=await fetch('/api/submit-review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({booking_id:bookingId,rating:rating,telegram_id:userId})});
+        const result=await r.json();
+        if(result.ok){document.getElementById('reviewMsg').innerHTML='<p style="color:#4CAF50;">✅ Спасибо за оценку! ' + '⭐'.repeat(rating) + '</p>'}else{document.getElementById('reviewMsg').innerHTML='<p style="color:red;">Ошибка</p>'}
+    }catch(e){tg.showAlert('Ошибка соединения')}
+}
+
+async function showBonuses(){
+    const div=document.getElementById('profileContent');
+    try{
+        const r=await fetch('/api/my-bonuses?telegram_id='+userId);
+        const data=await r.json();
+        div.innerHTML=`<h3>🎁 Бонусы</h3><p>Визитов: ${data.visits}</p><p>Баланс: ${data.bonus}₽</p><p>До бонуса: ${data.next_bonus} визитов</p>`;
+    }catch(e){div.innerHTML='<p>Ошибка</p>'}
+}
+
+async function shareRef(){
+    tg.showAlert('Ссылка на бота: t.me/'+tg.initDataUnsafe.user.username);
+}
+
+// === АДМИН ===
+async function showAdminBookings(){
+    const div=document.getElementById('adminContent');
+    div.innerHTML='Загрузка...';
+    try{
+        const r=await fetch('/api/admin/today-bookings');
+        const bookings=await r.json();
+        if(!bookings.length){div.innerHTML='<p>На сегодня записей нет.</p>';return}
+        let html='<h3>📅 Записи на сегодня</h3>';
+        bookings.forEach(b=>{
+            html+=`<div class="booking-item"><span>🕐 ${b.time} — #${b.id}</span><button class="cancel-btn" onclick="adminCancel(${b.id})">❌ Отменить</button></div>`;
+        });
+        div.innerHTML=html;
+    }catch(e){div.innerHTML='<p>Ошибка загрузки</p>'}
+}
+
+async function adminCancel(id){
+    try{
+        const r=await fetch('/api/admin/cancel-booking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({booking_id:id})});
+        const result=await r.json();
+        if(result.ok){tg.showAlert('Запись отменена');showAdminBookings()}else{tg.showAlert('Ошибка')}
+    }catch(e){tg.showAlert('Ошибка соединения')}
+}
+
+async function showAdminStats(){
+    const div=document.getElementById('adminContent');
+    try{
+        const r=await fetch('/api/admin/stats');
+        const data=await r.json();
+        div.innerHTML=`<h3>📊 Статистика</h3><p>Записей сегодня: ${data.today}</p><p>Всего клиентов: ${data.clients}</p>`;
+    }catch(e){div.innerHTML='<p>Ошибка</p>'}
+}
+
+async function showAdminMasters(){
+    const div=document.getElementById('adminContent');
+    try{
+        const r=await fetch('/api/masters');
+        const masters=await r.json();
+        let html='<h3>👥 Мастера</h3>';
+        masters.forEach(m=>{
+            html+=`<div class="option"><b>${m.name}</b> ⭐${m.rating}<br><button class="dayoff-btn" onclick="toggleDayOff(${m.id},'2026-05-21')">📅 Выходной на завтра</button></div>`;
+        });
+        div.innerHTML=html;
+    }catch(e){div.innerHTML='<p>Ошибка</p>'}
+}
+
+async function toggleDayOff(masterId,date){
+    try{
+        const r=await fetch('/api/toggle-dayoff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({master_id:masterId,date:date})});
+        const result=await r.json();
+        tg.showAlert(result.message||'Готово');
+    }catch(e){tg.showAlert('Ошибка соединения')}
+}
+
+async function showAdminServices(){
+    const div=document.getElementById('adminContent');
+    try{
+        const r=await fetch('/api/services');
+        const services=await r.json();
+        let html='<h3>💇 Услуги</h3>';
+        services.forEach(s=>{
+            html+=`<div class="option"><b>${s.name}</b> — ${s.price}₽</div>`;
+        });
+        div.innerHTML=html;
+    }catch(e){div.innerHTML='<p>Ошибка</p>'}
+}
+
+function ld(){
+    sh(1);
+}
+
+init();
