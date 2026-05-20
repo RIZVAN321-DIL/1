@@ -9,8 +9,12 @@ from app.models.booking import Booking
 from app.models.client import Client
 from app.models.master import Master
 from app.models.service import Service
+from app.models.review import Review
 
 router = Router()
+
+# Храним состояние рассылки
+broadcast_state = {}
 
 @router.callback_query(F.data == "admin")
 async def admin_menu(callback: CallbackQuery):
@@ -113,7 +117,6 @@ async def admin_services(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_reviews")
 async def admin_reviews(callback: CallbackQuery):
     async with async_session() as session:
-        from app.models.review import Review
         reviews = (await session.execute(select(Review).order_by(Review.created_at.desc()).limit(20))).scalars().all()
     if not reviews:
         await callback.message.answer("⭐ Отзывов пока нет.")
@@ -130,5 +133,41 @@ async def admin_reviews(callback: CallbackQuery):
 
 @router.callback_query(F.data == "admin_broadcast")
 async def admin_broadcast(callback: CallbackQuery):
-    await callback.message.answer("📢 Напишите сообщение для рассылки и перешлите его сюда.")
+    if callback.from_user.id not in settings.ADMIN_IDS:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+    broadcast_state[callback.from_user.id] = "waiting"
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❌ Отмена", callback_data="broadcast_cancel")
+    await callback.message.edit_text(
+        "📢 <b>Рассылка</b>\n\nОтправьте сообщение (текст, фото или видео), которое будет разослано всем клиентам.\n\nДля отмены нажмите кнопку ниже.",
+        reply_markup=builder.as_markup()
+    )
     await callback.answer()
+
+@router.callback_query(F.data == "broadcast_cancel")
+async def broadcast_cancel(callback: CallbackQuery):
+    broadcast_state.pop(callback.from_user.id, None)
+    await admin_menu(callback)
+    await callback.answer("Рассылка отменена")
+
+@router.message(F.content_type.in_({"text", "photo", "video"}))
+async def handle_broadcast(message: Message):
+    if message.from_user.id not in settings.ADMIN_IDS:
+        return
+    if broadcast_state.get(message.from_user.id) != "waiting":
+        return
+    broadcast_state[message.from_user.id] = "sending"
+    await message.answer("📢 Начинаю рассылку...")
+    async with async_session() as session:
+        clients = (await session.execute(select(Client))).scalars().all()
+    sent, failed = 0, 0
+    for client in clients:
+        if client.chat_id:
+            try:
+                await message.copy_to(client.chat_id)
+                sent += 1
+            except Exception:
+                failed += 1
+    broadcast_state.pop(message.from_user.id, None)
+    await message.answer(f"📢 <b>Рассылка завершена!</b>\n\n✅ Отправлено: {sent}\n❌ Не доставлено: {failed}")
