@@ -7,6 +7,8 @@ from app.config import settings
 from app.database import async_session
 from app.models.booking import Booking
 from app.models.client import Client
+from app.models.master import Master
+from app.models.service import Service
 
 router = Router()
 
@@ -25,10 +27,7 @@ async def admin_menu(callback: CallbackQuery):
     builder.button(text="🔗 Поделиться", callback_data="admin_share")
     builder.button(text="◀️ Назад", callback_data="start_back")
     builder.adjust(2)
-    await callback.message.edit_text(
-        "<b>🔧 Админ-панель</b>\n\nВыберите действие:",
-        reply_markup=builder.as_markup()
-    )
+    await callback.message.edit_text("<b>🔧 Админ-панель</b>\n\nВыберите действие:", reply_markup=builder.as_markup())
     await callback.answer()
 
 @router.callback_query(F.data == "start_back")
@@ -49,19 +48,18 @@ async def admin_share(callback: CallbackQuery):
 async def admin_stats(callback: CallbackQuery):
     today = date.today().isoformat()
     async with async_session() as session:
-        bookings_today = await session.scalar(
-            select(func.count()).where(Booking.date == today, Booking.status == "confirmed")
-        )
+        bookings_today = await session.scalar(select(func.count()).where(Booking.date == today, Booking.status == "confirmed"))
         total_clients = await session.scalar(select(func.count()).select_from(Client))
-        masters_busy = await session.execute(
-            select(Booking.master_id, func.count()).where(Booking.date == today).group_by(Booking.master_id)
-        )
+        total_bookings = await session.scalar(select(func.count()).select_from(Booking))
+        masters_busy = await session.execute(select(Booking.master_id, func.count()).where(Booking.date == today).group_by(Booking.master_id))
         busy = masters_busy.all()
-    msg = f"📊 <b>Статистика</b>\n\n📅 Записей сегодня: <b>{bookings_today}</b>\n👥 Всего клиентов: <b>{total_clients}</b>\n"
+        masters = (await session.execute(select(Master))).scalars().all()
+    msg = f"📊 <b>Статистика</b>\n\n📅 Записей сегодня: <b>{bookings_today}</b>\n📋 Всего записей: <b>{total_bookings}</b>\n👥 Всего клиентов: <b>{total_clients}</b>\n"
     if busy:
         msg += "\n<b>Записи по мастерам:</b>\n"
         for master_id, count in busy:
-            msg += f"• Мастер #{master_id}: {count} зап.\n"
+            master_name = next((m.name for m in masters if m.id == master_id), f"Мастер #{master_id}")
+            msg += f"• {master_name}: {count} зап.\n"
     await callback.message.answer(msg)
     await callback.answer()
 
@@ -69,9 +67,7 @@ async def admin_stats(callback: CallbackQuery):
 async def admin_bookings(callback: CallbackQuery):
     today = date.today().isoformat()
     async with async_session() as session:
-        result = await session.execute(
-            select(Booking).where(Booking.date == today, Booking.status == "confirmed").order_by(Booking.time)
-        )
+        result = await session.execute(select(Booking).where(Booking.date == today, Booking.status == "confirmed").order_by(Booking.time))
         bookings = result.scalars().all()
     if not bookings:
         await callback.message.answer("📅 На сегодня записей нет.")
@@ -84,17 +80,52 @@ async def admin_bookings(callback: CallbackQuery):
 
 @router.callback_query(F.data == "admin_masters")
 async def admin_masters(callback: CallbackQuery):
-    await callback.message.answer("👥 Управление мастерами будет доступно в следующем обновлении")
+    async with async_session() as session:
+        masters = (await session.execute(select(Master).order_by(Master.rating.desc()))).scalars().all()
+    if not masters:
+        await callback.message.answer("👥 Нет мастеров.")
+    else:
+        msg = "<b>👥 Мастера</b>\n\n"
+        for m in masters:
+            status = "✅ Активен" if m.is_active else "❌ Неактивен"
+            msg += f"• <b>{m.name}</b> — ⭐{m.rating} | Опыт: {m.experience_years} лет | {status}\n"
+        await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "admin_services")
 async def admin_services(callback: CallbackQuery):
-    await callback.message.answer("💇 Управление услугами будет доступно в следующем обновлении")
+    async with async_session() as session:
+        services = (await session.execute(select(Service).order_by(Service.category, Service.price))).scalars().all()
+    if not services:
+        await callback.message.answer("💇 Нет услуг.")
+    else:
+        msg = "<b>💇 Услуги</b>\n\n"
+        current_cat = None
+        for s in services:
+            if s.category != current_cat:
+                current_cat = s.category
+                msg += f"\n<b>{current_cat.upper() if current_cat else 'БЕЗ КАТЕГОРИИ'}</b>\n"
+            status = "✅" if s.is_active else "❌"
+            msg += f"{status} {s.name} — {s.price}₽ ({s.duration_minutes} мин)\n"
+        await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "admin_reviews")
 async def admin_reviews(callback: CallbackQuery):
-    await callback.message.answer("⭐ Модерация отзывов будет доступна в следующем обновлении")
+    async with async_session() as session:
+        from app.models.review import Review
+        reviews = (await session.execute(select(Review).order_by(Review.created_at.desc()).limit(20))).scalars().all()
+    if not reviews:
+        await callback.message.answer("⭐ Отзывов пока нет.")
+    else:
+        msg = "<b>⭐ Последние отзывы</b>\n\n"
+        for r in reviews:
+            stars = "⭐" * r.rating
+            msg += f"{stars} — запись #{r.booking_id}\n"
+            if r.comment:
+                msg += f"💬 {r.comment[:100]}\n"
+            msg += "\n"
+        await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "admin_broadcast")
