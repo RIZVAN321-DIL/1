@@ -1,7 +1,12 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy import select, func
+from datetime import date
 from app.config import settings
+from app.database import async_session
+from app.models.booking import Booking
+from app.models.client import Client
 
 router = Router()
 
@@ -42,12 +47,39 @@ async def admin_share(callback: CallbackQuery):
 
 @router.callback_query(F.data == "admin_stats")
 async def admin_stats(callback: CallbackQuery):
-    await callback.message.answer("📊 Статистика будет доступна в следующем обновлении")
+    today = date.today().isoformat()
+    async with async_session() as session:
+        bookings_today = await session.scalar(
+            select(func.count()).where(Booking.date == today, Booking.status == "confirmed")
+        )
+        total_clients = await session.scalar(select(func.count()).select_from(Client))
+        masters_busy = await session.execute(
+            select(Booking.master_id, func.count()).where(Booking.date == today).group_by(Booking.master_id)
+        )
+        busy = masters_busy.all()
+    msg = f"📊 <b>Статистика</b>\n\n📅 Записей сегодня: <b>{bookings_today}</b>\n👥 Всего клиентов: <b>{total_clients}</b>\n"
+    if busy:
+        msg += "\n<b>Записи по мастерам:</b>\n"
+        for master_id, count in busy:
+            msg += f"• Мастер #{master_id}: {count} зап.\n"
+    await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "admin_bookings")
 async def admin_bookings(callback: CallbackQuery):
-    await callback.message.answer("📅 Управление записями будет доступно в следующем обновлении")
+    today = date.today().isoformat()
+    async with async_session() as session:
+        result = await session.execute(
+            select(Booking).where(Booking.date == today, Booking.status == "confirmed").order_by(Booking.time)
+        )
+        bookings = result.scalars().all()
+    if not bookings:
+        await callback.message.answer("📅 На сегодня записей нет.")
+    else:
+        msg = f"📅 <b>Записи на {today}</b>\n\n"
+        for b in bookings:
+            msg += f"🕐 {b.time} — запись #{b.id}\n"
+        await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "admin_masters")
@@ -67,8 +99,5 @@ async def admin_reviews(callback: CallbackQuery):
 
 @router.callback_query(F.data == "admin_broadcast")
 async def admin_broadcast(callback: CallbackQuery):
-    await callback.message.answer(
-        "📢 Для рассылки напишите сообщение и перешлите его сюда.\n"
-        "Функция будет доработана в следующем обновлении."
-    )
+    await callback.message.answer("📢 Напишите сообщение для рассылки и перешлите его сюда.")
     await callback.answer()
