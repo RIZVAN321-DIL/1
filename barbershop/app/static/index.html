@@ -8,53 +8,46 @@
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-
-<div class="header">
-    <h1>💈 BARBERSHOP</h1>
-    <p>Премиум-запись</p>
-</div>
-
-<!-- Навигация для админа -->
-<div id="adminNav" style="display:none;">
-    <button class="tab-btn active" data-tab="book">✂️ Запись</button>
-    <button class="tab-btn" data-tab="profile">👤 Профиль</button>
-    <button class="tab-btn" data-tab="admin">🔧 Админ</button>
-</div>
-
-<!-- Вкладка: Запись -->
-<div id="tab-book" class="tab-content active">
-    <div id="s1" class="step active"><h2>Выберите услугу</h2><div id="svc"></div><button class="btn-next" onclick="nx(2)">Далее</button></div>
-    <div id="s2" class="step"><h2>Выберите мастера</h2><div id="mst"></div><div class="btn-group"><button class="btn-back" onclick="pv(1)">← Назад</button><button class="btn-next" onclick="nx(3)">Далее</button></div></div>
-    <div id="s3" class="step"><h2>Выберите дату</h2><div class="grid" id="dt"></div><div class="btn-group"><button class="btn-back" onclick="pv(2)">← Назад</button><button class="btn-next" onclick="nx(4)">Далее</button></div></div>
-    <div id="s4" class="step"><h2>Выберите время</h2><div class="grid" id="tm"></div><div class="btn-group"><button class="btn-back" onclick="pv(3)">← Назад</button><button class="btn-next" onclick="nx(5)">Далее</button></div></div>
-    <div id="s5" class="step"><h2>Подтверждение</h2><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><div class="btn-group"><button class="btn-back" onclick="pv(4)">← Назад</button><button class="btn-confirm" onclick="cf()">Подтвердить</button></div></div>
-</div>
-
-<!-- Вкладка: Профиль -->
-<div id="tab-profile" class="tab-content">
-    <h2>👤 Профиль</h2>
-    <div class="profile-menu">
-        <button class="profile-btn" onclick="showMyBookings()">📋 Мои записи</button>
-        <button class="profile-btn" onclick="showLeaveReview()">⭐ Оставить отзыв</button>
-        <button class="profile-btn" onclick="showBonuses()">🎁 Бонусы</button>
-        <button class="profile-btn" onclick="shareRef()">👥 Пригласить друга</button>
+    <div class="header"><h1>💈 BARBERSHOP</h1><p>10:00 - 21:00 | ул. Чернышевского, 52Б</p></div>
+    
+    <!-- Главное меню -->
+    <div id="s-main" class="step active">
+        <h2>Меню</h2>
+        <div class="menu-list">
+            <div class="menu-item" onclick="showSection('stats')"><span class="menu-icon">📊</span><span>Статистика</span><span class="menu-arrow">›</span></div>
+            <div class="menu-item" onclick="showSection('bookings')"><span class="menu-icon">📅</span><span>Записи на сегодня</span><span class="menu-arrow">›</span></div>
+            <div class="menu-item" onclick="showSection('masters')"><span class="menu-icon">👥</span><span>Мастера</span><span class="menu-arrow">›</span></div>
+            <div class="menu-item" onclick="showSection('services')"><span class="menu-icon">💇</span><span>Услуги</span><span class="menu-arrow">›</span></div>
+            <div class="menu-item" onclick="showSection('book')"><span class="menu-icon">✂️</span><span>Записать клиента</span><span class="menu-arrow">›</span></div>
+        </div>
     </div>
-    <div id="profileContent"></div>
-</div>
-
-<!-- Вкладка: Админ -->
-<div id="tab-admin" class="tab-content">
-    <h2>🔧 Админ-панель</h2>
-    <div class="admin-menu">
-        <button class="admin-btn" onclick="showAdminBookings()">📅 Записи на сегодня</button>
-        <button class="admin-btn" onclick="showAdminStats()">📊 Статистика</button>
-        <button class="admin-btn" onclick="showAdminMasters()">👥 Мастера</button>
-        <button class="admin-btn" onclick="showAdminServices()">💇 Услуги</button>
+    
+    <!-- Статистика -->
+    <div id="s-stats" class="step"><h2>📊 Статистика</h2><div id="stats-content"></div><div class="btn-group"><button class="btn-back" onclick="sh('main')">← Назад</button></div></div>
+    
+    <!-- Записи -->
+    <div id="s-bookings" class="step"><h2>📅 Записи на сегодня</h2><div id="bookings-content"></div><div class="btn-group"><button class="btn-back" onclick="sh('main')">← Назад</button></div></div>
+    
+    <!-- Мастера -->
+    <div id="s-masters" class="step"><h2>👥 Мастера</h2><div id="masters-content"></div><div class="btn-group"><button class="btn-back" onclick="sh('main')">← Назад</button></div></div>
+    
+    <!-- Услуги -->
+    <div id="s-services" class="step"><h2>💇 Услуги</h2><div id="services-content"></div><div class="btn-group"><button class="btn-back" onclick="sh('main')">← Назад</button></div></div>
+    
+    <!-- Запись -->
+    <div id="s-book" class="step">
+        <h2>✂️ Записать клиента</h2>
+        <div id="book-steps">
+            <div id="b1" class="book-step active"><h3>Услуга</h3><div id="svc"></div><button class="btn-next" onclick="bookNx(1)">Далее</button></div>
+            <div id="b2" class="book-step"><h3>Мастер</h3><div id="mst"></div><div class="btn-group"><button class="btn-back" onclick="bookPv(1)">← Назад</button><button class="btn-next" onclick="bookNx(2)">Далее</button></div></div>
+            <div id="b3" class="book-step"><h3>Дата</h3><div class="grid" id="dt"></div><div class="btn-group"><button class="btn-back" onclick="bookPv(2)">← Назад</button><button class="btn-next" onclick="bookNx(3)">Далее</button></div></div>
+            <div id="b4" class="book-step"><h3>Время</h3><div class="grid" id="tm"></div><div class="btn-group"><button class="btn-back" onclick="bookPv(3)">← Назад</button><button class="btn-next" onclick="bookNx(4)">Далее</button></div></div>
+            <div id="b5" class="book-step"><h3>Подтверждение</h3><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><div class="btn-group"><button class="btn-back" onclick="bookPv(4)">← Назад</button><button class="btn-confirm" onclick="cf()">Подтвердить</button></div></div>
+        </div>
+        <div class="btn-group"><button class="btn-back" onclick="sh('main')">← Назад в меню</button></div>
     </div>
-    <div id="adminContent"></div>
-</div>
-
-<div class="footer">📍 ул. Чернышевского, 52Б | 🕐 10:00–21:00</div>
-<script src="/static/app.js"></script>
+    
+    <div class="footer">📍 ул. Чернышевского, 52Б | 🕐 10:00–21:00</div>
+    <script src="/static/app.js"></script>
 </body>
 </html>
