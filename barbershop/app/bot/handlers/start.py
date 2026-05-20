@@ -9,9 +9,12 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     builder = InlineKeyboardBuilder()
-    builder.button(text="Записаться", web_app=WebAppInfo(url=f"{settings.BASE_URL}/mini-app"))
-    builder.adjust(1)
+    builder.button(text="✂️ Записаться", web_app=WebAppInfo(url=f"{settings.BASE_URL}/mini-app"))
+    builder.button(text="👤 Профиль", callback_data="profile")
+    if message.from_user.id in settings.ADMIN_IDS:
+        builder.button(text="🔧 Админ", callback_data="admin")
+    builder.adjust(2)
     await message.answer(
-        "<b>BARBERSHOP</b>\n\nДобро пожаловать!\nул. Чернышевского, 52Б\nЕжедневно 10:00 - 21:00\n\n<i>Нажмите кнопку ниже, чтобы записаться:</i>",
+        "<b>💈 BARBERSHOP</b>\n\nДобро пожаловать!\nул. Чернышевского, 52Б\nЕжедневно 10:00 - 21:00",
         reply_markup=builder.as_markup()
     )
