@@ -8,13 +8,14 @@ from app.bot.handlers.admin import router as admin_router
 from app.bot.handlers.profile import router as profile_router
 from app.logger import logger
 
+bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+dp = Dispatcher()
+dp.include_router(start_router)
+dp.include_router(admin_router)
+dp.include_router(profile_router)
+
 async def main():
     logger.info("Bot starting...")
-    bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-    dp = Dispatcher()
-    dp.include_router(start_router)
-    dp.include_router(admin_router)
-    dp.include_router(profile_router)
     logger.info("Bot ready")
     await dp.start_polling(bot, drop_pending_updates=True)
 
