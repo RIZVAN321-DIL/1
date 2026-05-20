@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Barbershop</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="header"><h1>BARBERSHOP</h1><p>Премиум-запись</p></div>
+    <div id="s1" class="step active"><h2>Выберите услугу</h2><div id="svc"></div><button class="btn-next" onclick="nx(2)">Далее</button></div>
+    <div id="s2" class="step"><h2>Выберите мастера</h2><div id="mst"></div><div class="btn-group"><button class="btn-back" onclick="pv(1)">Назад</button><button class="btn-next" onclick="nx(3)">Далее</button></div></div>
+    <div id="s3" class="step"><h2>Выберите дату</h2><div class="grid" id="dt"></div><div class="btn-group"><button class="btn-back" onclick="pv(2)">Назад</button><button class="btn-next" onclick="nx(4)">Далее</button></div></div>
+    <div id="s4" class="step"><h2>Выберите время</h2><div class="grid" id="tm"></div><div class="btn-group"><button class="btn-back" onclick="pv(3)">Назад</button><button class="btn-next" onclick="nx(5)">Далее</button></div></div>
+    <div id="s5" class="step"><h2>Подтверждение</h2><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><div class="btn-group"><button class="btn-back" onclick="pv(4)">Назад</button><button class="btn-confirm" onclick="cf()">Подтвердить</button></div></div>
+    <div class="footer">ул. Чернышевского, 52Б | 10:00 - 21:00</div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
