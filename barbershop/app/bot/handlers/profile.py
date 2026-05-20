@@ -99,13 +99,39 @@ async def rate_booking(callback: CallbackQuery):
         booking = await session.get(Booking, booking_id)
         review = Review(client_id=booking.client_id, master_id=booking.master_id, booking_id=booking_id, rating=rating, comment=None, is_approved=True)
         session.add(review)
-        await session.commit()
-    await callback.message.edit_text(f"<b>⭐ Спасибо за оценку!</b>\n\nВы поставили {'⭐' * rating} за визит {booking.date}.")
+        # Начисляем бонусы: 5-й визит = +200 бонусов
+        client = await session.get(Client, booking.client_id)
+        if client and client.total_visits > 0 and client.total_visits % 5 == 0:
+            client.bonus_balance = (client.bonus_balance or 0) + 200
+            await session.commit()
+            await callback.message.edit_text(
+                f"<b>⭐ Спасибо за оценку!</b>\n\n{'⭐' * rating} за визит {booking.date}.\n🎁 Бонус: +200₽ (каждый 5-й визит)!"
+            )
+        else:
+            await session.commit()
+            await callback.message.edit_text(f"<b>⭐ Спасибо за оценку!</b>\n\n{'⭐' * rating} за визит {booking.date}.")
     await callback.answer()
 
 @router.callback_query(F.data == "bonuses")
 async def bonuses(callback: CallbackQuery):
-    await callback.message.answer("🎁 Бонусная система будет запущена в следующем обновлении")
+    user_id = callback.from_user.id
+    async with async_session() as session:
+        client = await session.scalar(select(Client).where(Client.telegram_id == user_id))
+        if not client:
+            await callback.message.answer("Сначала сделайте запись.")
+            await callback.answer()
+            return
+        visits = client.total_visits or 0
+        bonus = client.bonus_balance or 0
+        next_bonus = 5 - (visits % 5) if visits % 5 != 0 else 5
+    msg = (
+        f"<b>🎁 Бонусная система</b>\n\n"
+        f"📋 Всего визитов: <b>{visits}</b>\n"
+        f"💰 Баланс бонусов: <b>{bonus}₽</b>\n"
+        f"🔜 До следующего бонуса: <b>{next_bonus} визитов</b>\n\n"
+        f"<i>Каждый 5-й визит — +200₽ на счёт!</i>"
+    )
+    await callback.message.answer(msg)
     await callback.answer()
 
 @router.callback_query(F.data == "referral")
