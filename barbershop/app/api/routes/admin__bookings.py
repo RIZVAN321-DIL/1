@@ -30,8 +30,7 @@ async def stats(session: AsyncSession = Depends(get_session)):
 @router.post("/cancel-booking")
 async def cancel_booking(data: CancelBooking, session: AsyncSession = Depends(get_session)):
     booking = await session.get(Booking, data.booking_id)
-    if not booking:
-        raise HTTPException(status_code=404, detail="Запись не найдена")
+    if not booking: raise HTTPException(status_code=404)
     booking.status = "cancelled"
     await session.commit()
     return {"ok": True}
