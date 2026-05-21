@@ -9,55 +9,54 @@
 </head>
 <body>
     <div class="header"><h1>💈 BARBERSHOP</h1><p>10:00 - 21:00 | ул. Чернышевского, 52Б</p></div>
-    
-    <div id="s1" class="step active">
-        <h2>Выберите услугу</h2>
-        <div id="svc"></div>
-        <button class="btn-next" onclick="nx(2)">Далее</button>
+
+    <!-- Главное меню -->
+    <div id="menu" class="section active">
+        <h2>Меню</h2>
+        <div id="menu-list"></div>
     </div>
-    
-    <div id="s2" class="step">
-        <h2>Выберите мастера</h2>
-        <div id="mst"></div>
-        <div class="btn-group">
-            <button class="btn-back" onclick="pv(1)">← Назад</button>
-            <button class="btn-next" onclick="nx(3)">Далее</button>
-        </div>
+
+    <!-- Запись -->
+    <div id="book" class="section" style="display:none;">
+        <h2>✂️ Запись</h2>
+        <div id="b1" class="step active"><h3>Услуга</h3><div id="svc"></div></div>
+        <div id="b2" class="step"><h3>Мастер</h3><div id="mst"></div></div>
+        <div id="b3" class="step"><h3>Дата</h3><div class="grid" id="dt"></div></div>
+        <div id="b4" class="step"><h3>Время</h3><div class="grid" id="tm"></div></div>
+        <div id="b5" class="step"><h3>Подтверждение</h3><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><button class="btn-confirm" onclick="cf()">Подтвердить</button></div>
+        <div class="btn-group"><button class="btn-back" onclick="goBack()">← Назад</button></div>
     </div>
-    
-    <div id="s3" class="step">
-        <h2>Выберите дату</h2>
-        <div class="grid" id="dt"></div>
-        <div class="btn-group">
-            <button class="btn-back" onclick="pv(2)">← Назад</button>
-            <button class="btn-next" onclick="nx(4)">Далее</button>
-        </div>
-    </div>
-    
-    <div id="s4" class="step">
-        <h2>Выберите время</h2>
-        <div class="grid" id="tm"></div>
-        <div class="btn-group">
-            <button class="btn-back" onclick="pv(3)">← Назад</button>
-            <button class="btn-next" onclick="nx(5)">Далее</button>
-        </div>
-    </div>
-    
-    <div id="s5" class="step">
-        <h2>Подтверждение</h2>
-        <div class="summary">
-            <div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div>
-            <div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div>
-            <div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div>
-            <div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div>
-            <div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div>
-        </div>
-        <div class="btn-group">
-            <button class="btn-back" onclick="pv(4)">← Назад</button>
-            <button class="btn-confirm" onclick="cf()">Подтвердить</button>
-        </div>
-    </div>
-    
+
+    <!-- Мои записи -->
+    <div id="my-bookings" class="section" style="display:none;"><h2>📋 Мои записи</h2><div id="my-bookings-content"></div><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Отзывы -->
+    <div id="reviews" class="section" style="display:none;"><h2>⭐ Отзывы</h2><div id="reviews-content"></div><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Бонусы -->
+    <div id="bonuses" class="section" style="display:none;"><h2>🎁 Бонусы</h2><div id="bonuses-content"></div><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Статистика -->
+    <div id="stats" class="section" style="display:none;"><h2>📊 Статистика</h2><div id="stats-content"></div><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Записи на сегодня -->
+    <div id="today-bookings" class="section" style="display:none;"><h2>📅 Записи на сегодня</h2><div id="today-bookings-content"></div><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Мастера -->
+    <div id="masters-admin" class="section" style="display:none;"><h2>👥 Мастера</h2><div id="masters-admin-content"></div><button class="btn-next" onclick="showMasterForm()">➕ Добавить мастера</button><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Форма мастера -->
+    <div id="master-form" class="section" style="display:none;"><h2 id="master-form-title">Добавить мастера</h2><input id="mf-name" placeholder="Имя" class="input"><input id="mf-photo" placeholder="URL фото или выберите файл" class="input"><input type="file" id="mf-file" accept="image/*" onchange="previewFile()"><input id="mf-exp" placeholder="Опыт (лет)" type="number" class="input"><div class="btn-group"><button class="btn-back" onclick="showSection('masters-admin')">← Назад</button><button class="btn-confirm" onclick="saveMaster()">Сохранить</button></div></div>
+
+    <!-- Услуги -->
+    <div id="services-admin" class="section" style="display:none;"><h2>💇 Услуги</h2><div id="services-admin-content"></div><button class="btn-next" onclick="showServiceForm()">➕ Добавить услугу</button><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
+    <!-- Форма услуги -->
+    <div id="service-form" class="section" style="display:none;"><h2 id="service-form-title">Добавить услугу</h2><input id="sf-name" placeholder="Название" class="input"><input id="sf-price" placeholder="Цена" type="number" class="input"><input id="sf-duration" placeholder="Длительность (мин)" type="number" class="input"><input id="sf-category" placeholder="Категория" class="input"><div class="btn-group"><button class="btn-back" onclick="showSection('services-admin')">← Назад</button><button class="btn-confirm" onclick="saveService()">Сохранить</button></div></div>
+
+    <!-- Рассылка -->
+    <div id="broadcast" class="section" style="display:none;"><h2>📢 Рассылка</h2><textarea id="broadcast-text" placeholder="Текст рассылки..." class="input" rows="4"></textarea><button class="btn-confirm" onclick="sendBroadcast()">Отправить</button><div class="btn-group"><button class="btn-back" onclick="showMenu()">← Назад</button></div></div>
+
     <div class="footer">📍 ул. Чернышевского, 52Б | 🕐 10:00–21:00</div>
     <script src="/static/app.js"></script>
 </body>
