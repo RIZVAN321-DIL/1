@@ -22,10 +22,10 @@ function showMenu(){
     items.forEach(item=>{const d=document.createElement('div');d.className='menu-card';d.innerHTML=`<span>${item.icon}</span><span>${item.text}</span>`;d.onclick=()=>{if(item.action==='share')shareRef();else showSection(item.id);};list.appendChild(d);});
 }
 
-function showSection(s){
+async function showSection(s){
     document.querySelectorAll('.section').forEach(el=>el.style.display='none');
     const sec=document.getElementById(s);if(sec)sec.style.display='block';
-    if(s==='book')startBooking();
+    if(s==='book'){await loadData();startBooking();}
     if(s==='my-bookings')loadMyBookings();
     if(s==='reviews')loadReviews();
     if(s==='bonuses')loadBonuses();
@@ -55,12 +55,14 @@ function startBooking(){
 
 function loadServicesUI(){
     const s=document.getElementById('svc');s.innerHTML='';
+    if(!services||services.length===0){s.innerHTML='<p>Нет доступных услуг</p>';return;}
     services.filter(x=>x.is_active).forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<div class="info"><b>${x.name}</b><span>${x.duration} мин</span></div><strong style="color:#c9a96e">${x.price}₽</strong>`;e.onclick=()=>{svc=x;goStep(2);};s.appendChild(e)});
 }
 
 function loadMastersUI(){
     const m=document.getElementById('mst');m.innerHTML='';
-    masters.filter(x=>x.is_active).forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<img src="${x.photo||''}" onerror="this.style.display='none'"><div class="info"><b>${x.name}</b><span>⭐${x.rating||'—'} | Опыт ${x.experience||0} лет</span></div>`;e.onclick=()=>{mst=x;goStep(3);};m.appendChild(e)});
+    if(!masters||masters.length===0){m.innerHTML='<p>Нет доступных мастеров</p>';return;}
+    masters.filter(x=>x.is_active).forEach(x=>{const e=document.createElement('div');e.className='option';e.innerHTML=`<img src="${x.photo_url||x.photo||''}" onerror="this.style.display='none'"><div class="info"><b>${x.name}</b><span>⭐${x.rating||'—'} | Опыт ${x.experience_years||x.experience||0} лет</span></div>`;e.onclick=()=>{mst=x;goStep(3);};m.appendChild(e)});
 }
 
 function goStep(n){
@@ -117,7 +119,7 @@ async function adminCancel(id){try{const r=await fetch('/api/admin/cancel-bookin
 // === МАСТЕРА ===
 async function loadMastersAdmin(){const d=document.getElementById('masters-admin-content');await loadData();let h='';masters.forEach(m=>{h+=`<div class="option"><span>${m.name}</span><span>⭐${m.rating||'—'}</span><button class="cancel-btn" onclick="toggleMaster(${m.id})">${m.is_active?'⏸️':'▶️'}</button><button class="cancel-btn" onclick="editMaster(${m.id})">✏️</button></div>`;});d.innerHTML=h||'<p>Нет мастеров</p>';}
 function showMasterForm(){editMasterId=null;document.getElementById('master-form-title').textContent='Добавить мастера';document.getElementById('mf-name').value='';document.getElementById('mf-photo').value='';document.getElementById('mf-exp').value='';document.getElementById('mf-file').value='';showSectionRaw('master-form');}
-function editMaster(id){const m=masters.find(x=>x.id===id);if(!m)return;editMasterId=id;document.getElementById('master-form-title').textContent='Изменить мастера';document.getElementById('mf-name').value=m.name;document.getElementById('mf-photo').value=m.photo||'';document.getElementById('mf-exp').value=m.experience||0;showSectionRaw('master-form');}
+function editMaster(id){const m=masters.find(x=>x.id===id);if(!m)return;editMasterId=id;document.getElementById('master-form-title').textContent='Изменить мастера';document.getElementById('mf-name').value=m.name;document.getElementById('mf-photo').value=m.photo_url||m.photo||'';document.getElementById('mf-exp').value=m.experience_years||m.experience||0;showSectionRaw('master-form');}
 function previewFile(){const f=document.getElementById('mf-file').files[0];if(f){const reader=new FileReader();reader.onload=()=>{document.getElementById('mf-photo').value=reader.result;};reader.readAsDataURL(f);}}
 async function saveMaster(){
     const name=document.getElementById('mf-name').value.trim();if(!name){tg.showAlert('Введите имя');return}
@@ -131,7 +133,7 @@ async function toggleMaster(id){try{const r=await fetch('/api/admin/masters/'+id
 // === УСЛУГИ ===
 async function loadServicesAdmin(){const d=document.getElementById('services-admin-content');await loadData();let h='';services.forEach(s=>{h+=`<div class="option"><span>${s.name}</span><span>${s.price}₽</span><button class="cancel-btn" onclick="toggleService(${s.id})">${s.is_active?'⏸️':'▶️'}</button><button class="cancel-btn" onclick="editService(${s.id})">✏️</button></div>`;});d.innerHTML=h||'<p>Нет услуг</p>';}
 function showServiceForm(){editServiceId=null;document.getElementById('service-form-title').textContent='Добавить услугу';document.getElementById('sf-name').value='';document.getElementById('sf-price').value='';document.getElementById('sf-duration').value='';document.getElementById('sf-category').value='';showSectionRaw('service-form');}
-function editService(id){const s=services.find(x=>x.id===id);if(!s)return;editServiceId=id;document.getElementById('service-form-title').textContent='Изменить услугу';document.getElementById('sf-name').value=s.name;document.getElementById('sf-price').value=s.price;document.getElementById('sf-duration').value=s.duration;document.getElementById('sf-category').value=s.category||'';showSectionRaw('service-form');}
+function editService(id){const s=services.find(x=>x.id===id);if(!s)return;editServiceId=id;document.getElementById('service-form-title').textContent='Изменить услугу';document.getElementById('sf-name').value=s.name;document.getElementById('sf-price').value=s.price;document.getElementById('sf-duration').value=s.duration_minutes||s.duration;document.getElementById('sf-category').value=s.category||'';showSectionRaw('service-form');}
 async function saveService(){
     const name=document.getElementById('sf-name').value.trim();if(!name){tg.showAlert('Введите название');return}
     const price=parseInt(document.getElementById('sf-price').value)||0;const duration=parseInt(document.getElementById('sf-duration').value)||0;const category=document.getElementById('sf-category').value.trim();
