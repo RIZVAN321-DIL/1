@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_session
@@ -30,20 +29,16 @@ async def update_master(master_id: int, data: MasterUpdate, session: AsyncSessio
     master = await session.get(Master, master_id)
     if not master:
         raise HTTPException(status_code=404, detail="Мастер не найден")
-    if data.name is not None:
-        master.name = data.name
-    if data.photo_url is not None:
-        master.photo_url = data.photo_url
-    if data.experience_years is not None:
-        master.experience_years = data.experience_years
+    if data.name is not None: master.name = data.name
+    if data.photo_url is not None: master.photo_url = data.photo_url
+    if data.experience_years is not None: master.experience_years = data.experience_years
     await session.commit()
     return {"ok": True}
 
 @router.post("/{master_id}/toggle")
 async def toggle_master(master_id: int, session: AsyncSession = Depends(get_session)):
     master = await session.get(Master, master_id)
-    if not master:
-        raise HTTPException(status_code=404, detail="Мастер не найден")
+    if not master: raise HTTPException(status_code=404)
     master.is_active = not master.is_active
     await session.commit()
     return {"ok": True, "is_active": master.is_active}
