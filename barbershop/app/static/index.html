@@ -9,47 +9,11 @@
 </head>
 <body>
     <div class="header"><h1>💈 BARBERSHOP</h1><p>10:00 - 21:00 | ул. Чернышевского, 52Б</p></div>
-
-    <!-- Админ: меню -->
-    <div id="admin-menu" style="display:none;">
-        <h2>Меню</h2>
-        <div class="menu-list">
-            <div class="menu-card" onclick="showSection('stats')"><span>📊</span><span>Статистика</span></div>
-            <div class="menu-card" onclick="showSection('bookings')"><span>📅</span><span>Записи на сегодня</span></div>
-            <div class="menu-card" onclick="showSection('masters')"><span>👥</span><span>Мастера</span></div>
-            <div class="menu-card" onclick="showSection('services')"><span>💇</span><span>Услуги</span></div>
-            <div class="menu-card" onclick="showSection('book')"><span>✂️</span><span>Записать клиента</span></div>
-        </div>
-    </div>
-
-    <!-- Статистика -->
-    <div id="s-stats" class="section" style="display:none;"><h2>📊 Статистика</h2><div id="stats-content"></div><div class="btn-group"><button class="btn-back" onclick="backToMenu()">← Назад</button></div></div>
-
-    <!-- Записи -->
-    <div id="s-bookings" class="section" style="display:none;"><h2>📅 Записи на сегодня</h2><div id="bookings-content"></div><div class="btn-group"><button class="btn-back" onclick="backToMenu()">← Назад</button></div></div>
-
-    <!-- Мастера -->
-    <div id="s-masters" class="section" style="display:none;"><h2>👥 Мастера</h2><div id="masters-content"></div><button class="btn-next" onclick="showMasterForm()" style="margin-top:12px">➕ Добавить мастера</button><div class="btn-group"><button class="btn-back" onclick="backToMenu()">← Назад</button></div></div>
-
-    <!-- Форма мастера -->
-    <div id="s-master-form" class="section" style="display:none;"><h2 id="master-form-title">Добавить мастера</h2><input id="mf-name" placeholder="Имя" class="input"><input id="mf-photo" placeholder="URL фото" class="input"><input id="mf-exp" placeholder="Опыт (лет)" type="number" class="input"><div class="btn-group"><button class="btn-back" onclick="showSection('masters')">← Назад</button><button class="btn-confirm" onclick="saveMaster()">Сохранить</button></div></div>
-
-    <!-- Услуги -->
-    <div id="s-services" class="section" style="display:none;"><h2>💇 Услуги</h2><div id="services-content"></div><button class="btn-next" onclick="showServiceForm()" style="margin-top:12px">➕ Добавить услугу</button><div class="btn-group"><button class="btn-back" onclick="backToMenu()">← Назад</button></div></div>
-
-    <!-- Форма услуги -->
-    <div id="s-service-form" class="section" style="display:none;"><h2 id="service-form-title">Добавить услугу</h2><input id="sf-name" placeholder="Название" class="input"><input id="sf-price" placeholder="Цена" type="number" class="input"><input id="sf-duration" placeholder="Длительность (мин)" type="number" class="input"><input id="sf-category" placeholder="Категория" class="input"><div class="btn-group"><button class="btn-back" onclick="showSection('services')">← Назад</button><button class="btn-confirm" onclick="saveService()">Сохранить</button></div></div>
-
-    <!-- Форма записи -->
-    <div id="s-book" class="section" style="display:none;">
-        <h2>✂️ Запись</h2>
-        <div id="b1" class="book-step active"><h3>Услуга</h3><div id="svc"></div><div class="btn-group"><button class="btn-back" onclick="backToStart()">← Назад</button></div></div>
-        <div id="b2" class="book-step"><h3>Мастер</h3><div id="mst"></div><div class="btn-group"><button class="btn-back" onclick="pv(1)">← Назад</button></div></div>
-        <div id="b3" class="book-step"><h3>Дата</h3><div class="grid" id="dt"></div><div class="btn-group"><button class="btn-back" onclick="pv(2)">← Назад</button></div></div>
-        <div id="b4" class="book-step"><h3>Время</h3><div class="grid" id="tm"></div><div class="btn-group"><button class="btn-back" onclick="pv(3)">← Назад</button></div></div>
-        <div id="b5" class="book-step"><h3>Подтверждение</h3><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><div class="btn-group"><button class="btn-back" onclick="pv(4)">← Назад</button><button class="btn-confirm" onclick="cf()">Подтвердить</button></div></div>
-    </div>
-
+    <div id="s1" class="step active"><h2>Выберите услугу</h2><div id="svc"></div><button class="btn-next" onclick="nx(2)">Далее</button></div>
+    <div id="s2" class="step"><h2>Выберите мастера</h2><div id="mst"></div><div class="btn-group"><button class="btn-back" onclick="pv(1)">← Назад</button><button class="btn-next" onclick="nx(3)">Далее</button></div></div>
+    <div id="s3" class="step"><h2>Выберите дату</h2><div class="grid" id="dt"></div><div class="btn-group"><button class="btn-back" onclick="pv(2)">← Назад</button><button class="btn-next" onclick="nx(4)">Далее</button></div></div>
+    <div id="s4" class="step"><h2>Выберите время</h2><div class="grid" id="tm"></div><div class="btn-group"><button class="btn-back" onclick="pv(3)">← Назад</button><button class="btn-next" onclick="nx(5)">Далее</button></div></div>
+    <div id="s5" class="step"><h2>Подтверждение</h2><div class="summary"><div class="summary-item"><span>Услуга</span><strong id="sm_svc"></strong></div><div class="summary-item"><span>Мастер</span><strong id="sm_mst"></strong></div><div class="summary-item"><span>Дата</span><strong id="sm_dt"></strong></div><div class="summary-item"><span>Время</span><strong id="sm_tm"></strong></div><div class="summary-item total"><span>Цена</span><strong id="sm_pr"></strong></div></div><div class="btn-group"><button class="btn-back" onclick="pv(4)">← Назад</button><button class="btn-confirm" onclick="cf()">Подтвердить</button></div></div>
     <div class="footer">📍 ул. Чернышевского, 52Б | 🕐 10:00–21:00</div>
     <script src="/static/app.js"></script>
 </body>
