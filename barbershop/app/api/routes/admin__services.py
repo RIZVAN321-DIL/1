@@ -29,24 +29,18 @@ async def create_service(data: ServiceCreate, session: AsyncSession = Depends(ge
 @router.put("/{service_id}")
 async def update_service(service_id: int, data: ServiceUpdate, session: AsyncSession = Depends(get_session)):
     service = await session.get(Service, service_id)
-    if not service:
-        raise HTTPException(status_code=404, detail="Услуга не найдена")
-    if data.name is not None:
-        service.name = data.name
-    if data.price is not None:
-        service.price = data.price
-    if data.duration_minutes is not None:
-        service.duration_minutes = data.duration_minutes
-    if data.category is not None:
-        service.category = data.category
+    if not service: raise HTTPException(status_code=404)
+    if data.name is not None: service.name = data.name
+    if data.price is not None: service.price = data.price
+    if data.duration_minutes is not None: service.duration_minutes = data.duration_minutes
+    if data.category is not None: service.category = data.category
     await session.commit()
     return {"ok": True}
 
 @router.post("/{service_id}/toggle")
 async def toggle_service(service_id: int, session: AsyncSession = Depends(get_session)):
     service = await session.get(Service, service_id)
-    if not service:
-        raise HTTPException(status_code=404, detail="Услуга не найдена")
+    if not service: raise HTTPException(status_code=404)
     service.is_active = not service.is_active
     await session.commit()
     return {"ok": True, "is_active": service.is_active}
