@@ -158,7 +158,16 @@ async function cf() {
     const payload = { telegram_id: user.id, chat_id: user.id, username: user.username || null, first_name: user.first_name || null, last_name: user.last_name || null, service_id: state.svc.id, master_id: state.mst.id, date: state.date, time: state.time };
     try {
         const res = await api('/api/book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (res.ok) { tg.showAlert(`Запись подтверждена!\n\n${res.service}\nМастер: ${res.master}\n${res.date} в ${res.time}\nЦена: ${res.price}₽`); rn('menu'); }
+        if (res.ok) {
+            tg.showAlert(`Запись подтверждена!\n\n${res.service}\nМастер: ${res.master}\n${res.date} в ${res.time}\nЦена: ${res.price}₽`);
+            const p = await api(`/api/profile?telegram_id=${user.id}`);
+            if (p.exists) { state.profile = p; state.bookings = p.bookings || []; state.pastBookings = p.past_bookings_for_review || []; }
+            if (isAdmin) {
+                state.stats = await api(`/api/admin/stats?admin_telegram_id=${user.id}`);
+                state.todayBookings = await api(`/api/admin/today-bookings?admin_telegram_id=${user.id}`);
+            }
+            rn('my_bookings');
+        }
         else { tg.showAlert(res.detail || 'Ошибка записи'); }
     } catch (e) { tg.showAlert('Ошибка соединения'); }
     state.isSubmitting = false;
